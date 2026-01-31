@@ -203,6 +203,7 @@
 <script>
 import { useTokenValidation } from '../composables/useTokenValidation'
 import { copyToClipboard, useQuasar } from 'quasar'
+import { useRoute } from 'vue-router'
 import ValidationBanners from '../components/ValidationBanners.vue'
 import DownloadBanners from '../components/DownloadBanners.vue'
 import VueJsonPretty from 'vue-json-pretty'
@@ -218,6 +219,7 @@ export default {
   },
   setup() {
     const $q = useQuasar()
+    const route = useRoute()
     const {
       token,
       jwksUri,
@@ -256,9 +258,9 @@ export default {
     function shareWebLink() {
       let shareUrl
       if (hasJwksKey.value && jwksKeys.value) {
-        shareUrl = `https://jwtdebugger.app#token=${token.value}&jwks=${jwksUri.value}`
+        shareUrl = `https://jwtdebugger.app/#/?token=${token.value}&jwks=${jwksUri.value}`
       } else {
-        shareUrl = `https://jwtdebugger.app#token=${token.value}`
+        shareUrl = `https://jwtdebugger.app/#/?token=${token.value}`
       }
       copyToClipboard(shareUrl).then(() => {
         $q.notify('Link copied')
@@ -312,7 +314,20 @@ export default {
     }
 
     onMounted(async () => {
-      await initialToken()
+      // Load token from URL query parameters if present
+      if (route.query.token) {
+        token.value = decodeURIComponent(route.query.token)
+        // Load JWKS URI from URL query parameters if present
+        if (route.query.jwks) {
+          jwksUri.value = decodeURIComponent(route.query.jwks)
+        }
+        await handleParseJwtToken()
+        if (route.query.jwks) {
+          await handleGetJwksKeys()
+        }
+      } else {
+        await initialToken()
+      }
     })
 
     return {
