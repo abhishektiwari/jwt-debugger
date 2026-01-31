@@ -71,7 +71,8 @@
   ],
   "build": {
     "appId": "io.jwt-debugger",
-    "productName": "jwt-debugger",
+    "productName": "JWT Debugger",
+    "artifactName": "${name}-${os}.${ext}",
     "directories": {
       "output": "dist-electron"
     },
@@ -84,8 +85,14 @@
       "icon": "public/icon-512x512.png",
       "category": "public.app-category.developer-tools",
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
       ]
     },
     "win": {
@@ -112,7 +119,11 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "JWT Debugger"
+      "shortcutName": "JWT Debugger",
+      "artifactName": "jwt-debugger-windows-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "jwt-debugger-windows-portable.${ext}"
     },
     "linux": {
       "target": [
