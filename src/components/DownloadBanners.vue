@@ -1,25 +1,18 @@
 <template>
-  <div class="column items-center" v-if="!$q.platform.is.electron">
-    <div class="col" v-if="$q.platform.is.desktop && ($q.platform.is.mac || $q.platform.is.win || $q.platform.is.linux)">
-      <q-banner rounded class="bg-grey-3">
-        <div class="row items-center q-gutter-md">
-          <div class="col">
-            <div class="text-subtitle1 q-mb-xs">Download Desktop App</div>
-            <div class="text-caption text-grey-7">Available for Mac, Windows, and Linux</div>
-          </div>
-          <div>
-            <q-btn
-              unelevated
-              color="primary"
-              icon="download"
-              label="View Releases"
-              @click="openReleases"
-              no-caps
-            />
-          </div>
-        </div>
-      </q-banner>
+  <div v-if="!$q.platform.is.electron && $q.platform.is.desktop && ($q.platform.is.mac || $q.platform.is.win || $q.platform.is.linux)" class="bg-grey-3 q-pa-md rounded-borders">
+    <div class="text-h6">Download Desktop App</div>
+    <div class="text-caption text-grey">
+      Available for Mac, Windows, and Linux
     </div>
+    <q-btn
+      unelevated
+      color="primary"
+      icon="download"
+      label="View Releases"
+      @click="openReleases"
+      no-caps
+      class="q-mt-sm full-width"
+    />
   </div>
 </template>
 

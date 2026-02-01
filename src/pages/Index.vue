@@ -118,6 +118,9 @@
                 Share via web link
               </q-btn>
             </q-card-actions>
+            <q-card-section v-if="token">
+              <download-banners />
+            </q-card-section>
           </q-card>
         </div>
         <q-separator />
@@ -201,7 +204,6 @@
         </div>
       </div>
     </div>
-    <download-banners />
 
     <!-- Tooltip for timestamp hover -->
     <div
