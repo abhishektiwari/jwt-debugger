@@ -72,7 +72,6 @@
   "build": {
     "appId": "io.jwt-debugger",
     "productName": "JWT Debugger",
-    "artifactName": "${name}-${os}.${ext}",
     "directories": {
       "output": "dist-electron"
     },

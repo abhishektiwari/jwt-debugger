@@ -1,5 +1,24 @@
 <template>
   <div>
+    <!-- Token Quality Indicator -->
+    <div class="q-pa-sm q-gutter-sm" v-if="token && tokenPayload">
+      <q-banner rounded class="bg-grey-3">
+        <div class="row q-col-gutter-sm">
+          <div class="col-6 col-sm-3" v-for="field in qualityFields" :key="field.key">
+            <div class="row items-center no-wrap">
+              <q-icon
+                :name="field.available ? 'check_circle' : 'cancel'"
+                :color="field.available ? 'positive' : 'negative'"
+                size="sm"
+                class="q-mr-xs"
+              />
+              <span class="text-caption">{{ field.key }}</span>
+            </div>
+          </div>
+        </div>
+      </q-banner>
+    </div>
+
     <div class="q-pa-sm q-gutter-sm" v-if="token && !isValidToken">
       <q-banner rounded class="bg-red-8 text-white">
         <div class="text-h6">JWT Token is invalid</div>
@@ -61,8 +80,29 @@
 
 <script>
 export default {
-  props: ['token', 'isValidToken', 'tokenPayload', 'hasJwksKey', 'signingKey', 'hasHmacAlg'],
+  props: ['token', 'isValidToken', 'tokenPayload', 'tokenHeader', 'hasJwksKey', 'signingKey', 'hasHmacAlg'],
   computed: {
+    qualityFields() {
+      const fields = [
+        { key: 'iss', label: 'iss (Issuer)', location: 'payload' },
+        { key: 'sub', label: 'sub (Subject)', location: 'payload' },
+        { key: 'aud', label: 'aud (Audience)', location: 'payload' },
+        { key: 'exp', label: 'exp (Expiration)', location: 'payload' },
+        { key: 'nbf', label: 'nbf (Not Before)', location: 'payload' },
+        { key: 'iat', label: 'iat (Issued At)', location: 'payload' },
+        { key: 'jti', label: 'jti (JWT ID)', location: 'payload' },
+        { key: 'typ', label: 'typ (Type)', location: 'header' }
+      ]
+
+      return fields.map(field => {
+        const source = field.location === 'header' ? this.tokenHeader : this.tokenPayload
+        const available = source && source[field.key] !== undefined && source[field.key] !== null
+        return {
+          ...field,
+          available
+        }
+      })
+    },
     isTokenExpired() {
       if (this.tokenPayload) {
         return Math.round(new Date().getTime() / 1000) < this.tokenPayload.exp

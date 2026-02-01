@@ -135,6 +135,7 @@
               :signingKey="signingKey"
               :isValidToken="isValidToken"
               :tokenPayload="tokenPayload"
+              :tokenHeader="tokenHeader"
               :hasJwksKey="hasJwksKey"
               :hasHmacAlg="hasHmacAlg"
             />
@@ -158,7 +159,9 @@
               <vue-json-pretty
                 :path="'res'"
                 :data="tokenHeader"
-                @click="handleClick"
+                @node-click="handleClick"
+                @node-mouseover="handleNodeMouseover"
+                @mouseleave="hideTooltip"
                 :showSelectController="true"
                 :highlightMouseoverNode="true"
                 v-if="tokenHeader"
@@ -186,7 +189,9 @@
             <vue-json-pretty
               :path="'res'"
               :data="tokenPayload"
-              @click="handleClick"
+              @node-click="handleClick"
+              @node-mouseover="handleNodeMouseover"
+              @mouseleave="hideTooltip"
               :showSelectController="true"
               :highlightMouseoverNode="true"
               v-if="tokenPayload"
@@ -197,6 +202,18 @@
       </div>
     </div>
     <download-banners />
+
+    <!-- Tooltip for timestamp hover -->
+    <div
+      v-if="tooltipVisible"
+      class="timestamp-tooltip"
+      :style="{
+        left: tooltipX + 10 + 'px',
+        top: tooltipY + 10 + 'px'
+      }"
+    >
+      {{ tooltipContent }}
+    </div>
   </q-page>
 </template>
 
@@ -208,7 +225,7 @@ import ValidationBanners from '../components/ValidationBanners.vue'
 import DownloadBanners from '../components/DownloadBanners.vue'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css';
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 export default {
   name: 'PageIndex',
@@ -239,6 +256,12 @@ export default {
       onAlgorithmChange
     } = useTokenValidation()
 
+    // Tooltip state for timestamp hover
+    const tooltipVisible = ref(false)
+    const tooltipContent = ref('')
+    const tooltipX = ref(0)
+    const tooltipY = ref(0)
+
     const algorithmOptions = [
       { label: 'HS256 - HMAC using SHA-256 hash algorithm', value: 'HS256' },
       { label: 'HS384 - HMAC using SHA-384 hash algorithm', value: 'HS384' },
@@ -267,13 +290,73 @@ export default {
       })
     }
 
-    function handleClick(path, data) {
-      if (typeof data === 'object') {
-        data = JSON.stringify(data)
+    function handleClick(node) {
+      // Vue-json-pretty @node-click passes a node object
+      // Use node.content for the actual value, fallback to node.value or node
+      const data = node?.content ?? node?.value ?? node
+
+      // Log for debugging
+      console.log('Node clicked:', node)
+      console.log('Data to copy:', data)
+
+      if (data === undefined || data === null) {
+        $q.notify({
+          type: 'warning',
+          message: 'No value to copy'
+        })
+        return
       }
-      copyToClipboard(data).then(() => {
-        $q.notify('Copied')
+
+      let valueToCopy
+      if (typeof data === 'object' && data !== null) {
+        valueToCopy = JSON.stringify(data, null, 2)
+      } else {
+        valueToCopy = String(data)
+      }
+
+      copyToClipboard(valueToCopy).then(() => {
+        $q.notify('Copied: ' + (valueToCopy.length > 50 ? valueToCopy.substring(0, 50) + '...' : valueToCopy))
+      }).catch(() => {
+        $q.notify({
+          type: 'negative',
+          message: 'Failed to copy'
+        })
       })
+    }
+
+    function handleNodeMouseover(node, event) {
+      // Check if this is a timestamp field in JWT (exp, iat, nbf)
+      const timestampFields = ['exp', 'iat', 'nbf']
+      const key = node?.key
+      const value = node?.content ?? node?.value
+
+      // Only show tooltip for known timestamp fields with numeric values
+      if (timestampFields.includes(key) && typeof value === 'number') {
+        // Convert Unix timestamp to human-readable date
+        const date = new Date(value * 1000)
+        const formattedDate = date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        })
+
+        // Position tooltip near mouse cursor
+        const mouseEvent = event || window.event
+        tooltipX.value = mouseEvent?.clientX || 0
+        tooltipY.value = mouseEvent?.clientY || 0
+        tooltipContent.value = formattedDate
+        tooltipVisible.value = true
+      } else {
+        tooltipVisible.value = false
+      }
+    }
+
+    function hideTooltip() {
+      tooltipVisible.value = false
     }
 
     function copyTokenHeader() {
@@ -343,6 +426,10 @@ export default {
       hasHmacAlg,
       keyTypeLabel,
       algorithmOptions,
+      tooltipVisible,
+      tooltipContent,
+      tooltipX,
+      tooltipY,
       getJwksKeys,
       parseJwtToken,
       parseSecret,
@@ -353,6 +440,8 @@ export default {
       handleParseSecret,
       shareWebLink,
       handleClick,
+      handleNodeMouseover,
+      hideTooltip,
       copyTokenHeader,
       copyTokenPayload,
       copyJwtToken
@@ -367,5 +456,18 @@ export default {
 }
 .jwt_token {
   font-family: monospace;
+}
+.timestamp-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background-color: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  word-wrap: break-word;
 }
 </style>
