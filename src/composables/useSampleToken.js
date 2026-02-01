@@ -11,11 +11,13 @@ function generateQuickGuid() {
 
 // Generate sample payload with standard JWT claims
 function generateSamplePayload() {
+  const now = Math.floor(Date.now() / 1000)
   return {
     sub: '1234567890',
     name: 'John Doe',
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: now,
+    nbf: now,
+    exp: now + 3600,
     aud: 'jwt-debugger-app',
     iss: 'jwt-debugger',
     jti: generateQuickGuid()

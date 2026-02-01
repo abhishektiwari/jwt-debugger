@@ -4,7 +4,7 @@
     <div class="q-pa-sm q-gutter-sm" v-if="token && tokenPayload">
       <q-banner rounded class="bg-grey-3">
         <div class="row q-col-gutter-sm">
-          <div class="col-6 col-sm-3" v-for="field in qualityFields" :key="field.key">
+          <div class="col-6 quality-field-item" v-for="field in qualityFields" :key="field.key">
             <div class="row items-center no-wrap">
               <q-icon
                 :name="field.available ? 'check_circle' : 'cancel'"
@@ -84,19 +84,26 @@ export default {
   computed: {
     qualityFields() {
       const fields = [
+        { key: 'alg', label: 'alg (Algorithm)', location: 'header', checkValue: true },
+        { key: 'typ', label: 'typ (Type)', location: 'header' },
         { key: 'iss', label: 'iss (Issuer)', location: 'payload' },
         { key: 'sub', label: 'sub (Subject)', location: 'payload' },
         { key: 'aud', label: 'aud (Audience)', location: 'payload' },
         { key: 'exp', label: 'exp (Expiration)', location: 'payload' },
         { key: 'nbf', label: 'nbf (Not Before)', location: 'payload' },
         { key: 'iat', label: 'iat (Issued At)', location: 'payload' },
-        { key: 'jti', label: 'jti (JWT ID)', location: 'payload' },
-        { key: 'typ', label: 'typ (Type)', location: 'header' }
+        { key: 'jti', label: 'jti (JWT ID)', location: 'payload' }
       ]
 
       return fields.map(field => {
         const source = field.location === 'header' ? this.tokenHeader : this.tokenPayload
-        const available = source && source[field.key] !== undefined && source[field.key] !== null
+        let available = source && source[field.key] !== undefined && source[field.key] !== null
+
+        // Special check for alg field - mark as unavailable if value is "none"
+        if (field.key === 'alg' && available) {
+          available = source[field.key] !== 'none'
+        }
+
         return {
           ...field,
           available
@@ -116,3 +123,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+@media (min-width: 600px) {
+  .quality-field-item {
+    flex: 0 0 20%;
+    max-width: 20%;
+  }
+}
+</style>
